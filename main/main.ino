@@ -3,13 +3,8 @@
 #define ROWS 4
 #define COLS 4
 #define DTMF_TONES 12
-
-const char keys[ROWS][COLS] = {
-  {'1','2','3','A'},
-  {'4','5','6','B'},
-  {'7','8','9','C'},
-  {'*','0','#','D'},
-};
+#define WAVE_TABLE_SIZE 200
+#define R2R_OFFSET 2
 
 typedef struct DTMF_TONE {
   uint16_t freq_1;
@@ -32,8 +27,6 @@ const DTMF_TONE dtmf_tones[DTMF_TONES] = {
   {941, 1477, '#'},
 };
 
-#define WAVE_TABLE_SIZE 200
-
 unsigned char waveTable[WAVE_TABLE_SIZE] = { 
     64,  66,  68,  69,  71,  73,  75,  77,  79,  80,  82,  84,  86,  88,  89, 
     91,  93,  94,  96,  97,  99, 101, 102, 103, 105, 106, 107, 109, 110, 111, 
@@ -49,6 +42,13 @@ unsigned char waveTable[WAVE_TABLE_SIZE] = {
     10,  11,  12,  13,  14,  15,  16,  18,  19,  20,  21,  23,  24,  26,  27, 
     28,  30,  32,  33,  35,  37,  38,  40,  42,  43,  45,  47,  49,  51,  53, 
     54, 56, 58, 60, 62 };
+
+const char keys[ROWS][COLS] = {
+  {'1','2','3','A'},
+  {'4','5','6','B'},
+  {'7','8','9','C'},
+  {'*','0','#','D'},
+};
 
 byte rowPins[ROWS] = {10, 11, 12, A4};
 byte colPins[COLS] = {A3, A2, A1, A0};  // TODO: Change some pins to analog pins to make place for R2R ladder
@@ -71,7 +71,7 @@ void setup() {
   dtmf[0] = 0;
 
   for(uint8_t i = 0; i < 8; i++){
-    pinMode(i + 2, OUTPUT);
+    pinMode(i + R2R_OFFSET, OUTPUT);
   }
 
 }
@@ -89,9 +89,7 @@ void loop() {
           break;
         }
       }
-      // Test
     }
-    // TODO: Play dtmf tone
     clear_dtmf();
   }else if(key == 'C'){
     // Clear DTMF
@@ -117,7 +115,7 @@ void clear_dtmf(){
 
 void write_value(uint8_t value){
   for(uint8_t i = 0; i < 8; i++){
-    digitalWrite(i + 2, (value >> i) & 1);
+    digitalWrite(i + R2R_OFFSET, (value >> i) & 1);
   }
 }
 
