@@ -50,8 +50,8 @@ unsigned char waveTable[WAVE_TABLE_SIZE] = {
     28,  30,  32,  33,  35,  37,  38,  40,  42,  43,  45,  47,  49,  51,  53, 
     54, 56, 58, 60, 62 };
 
-byte rowPins[ROWS] = {2, 3, 4, 5};
-byte colPins[COLS] = {6, 7, 8, 9};  // TODO: Change some pins to analog pins to make place for R2R ladder
+byte rowPins[ROWS] = {10, 11, 12, A4};
+byte colPins[COLS] = {A3, A2, A1, A0};  // TODO: Change some pins to analog pins to make place for R2R ladder
 
 Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 
@@ -73,12 +73,10 @@ void setup() {
   for(uint8_t i = 0; i < 8; i++){
     pinMode(i + 2, OUTPUT);
   }
-  generate_tone(1000, 100, 200);
 
 }
 
 void loop() {
-  return;
   char key = keypad.waitForKey();
   Serial.println(key);
   if(key == 'A') {
