@@ -1,0 +1,7 @@
+{
+    "sketch": "main.ino",
+    "configuration": "cpu=atmega328old",
+    "board": "arduino:avr:nano",
+    "programmer": "arduino:avrispmkii",
+    "port": "/dev/ttyUSB0"
+}
