@@ -7,6 +7,9 @@
 #define WAVE_TABLE_SIZE 200
 #define R2R_OFFSET 2
 #define PTT 13
+#define DELAY A7
+#define SENSE A6
+#define AUDIO_IN A5
 
 typedef struct DTMF_TONE
 {
@@ -69,7 +72,6 @@ uint32_t freq2_offset = 0;
 
 void setup()
 {
-  Serial.begin(9600);
   dtmf = (char *)malloc(1);
   dtmf[0] = 0;
 
@@ -78,12 +80,14 @@ void setup()
     pinMode(i + R2R_OFFSET, OUTPUT);
   }
   pinMode(PTT, OUTPUT);
+  pinMode(DELAY, INPUT);
+  pinMode(SENSE, INPUT);
+  pinMode(AUDIO_IN, INPUT);
 }
 
 void loop()
 {
-
-  char key = keypad.waitForKey();
+  char key = keypad.getKey();
   if (key == 'A')
   {
     setPTT(HIGH);
@@ -113,18 +117,16 @@ void loop()
   {
     // Generate tone to open relay stations
     setPTT(HIGH);
-    char c;
-    do
-    {
-      c = keypad.waitForKey();
-    } while (c != 'B');
+    delay(1200);
+    generate_tone(1000, 37, 0); // 1750 Hz tone
+    delay(300);
     setPTT(LOW);
   }
   else if (key == 'D')
   {
     // NOTING
   }
-  else
+  else if (key != 0)
   {
     if (dtmfSize >= 0xfe)
     { // We dont want to risk an overflow of the size byte
@@ -134,6 +136,26 @@ void loop()
     dtmf = (char *)realloc(dtmf, dtmfSize + 1);
     dtmf[dtmfSize] = 0;
     dtmf[dtmfSize - 1] = key;
+  }
+
+  int audio_in = analogRead(AUDIO_IN);
+
+  if (audio_in >= analogRead(SENSE))
+  {
+    setPTT(HIGH);
+
+    unsigned long now = millis();
+    while (millis() - now < map(analogRead(DELAY), 0, 1024, 10, 2000))
+    {
+      audio_in = analogRead(AUDIO_IN);
+      int sense = analogRead(SENSE);
+      if (audio_in >= sense)
+      {
+        now = millis();
+      }
+    }
+
+    setPTT(LOW);
   }
 }
 
@@ -163,10 +185,6 @@ void generate_tone(uint32_t time_delay, uint32_t freq1, uint32_t freq2)
   freq2_pos = 0;
   freq1_offset = freq1;
   freq2_offset = freq2;
-
-  Serial.print(freq1_offset);
-  Serial.print(" ");
-  Serial.println(freq2_offset);
 
   // Enable Timer
   noInterrupts();
@@ -200,7 +218,10 @@ void generate_tone(uint32_t time_delay, uint32_t freq1, uint32_t freq2)
 // Timer Interrupt
 ISR(TIMER1_COMPA_vect)
 {
-  uint8_t value = waveTable[freq1_pos] + waveTable[freq2_pos];
+  uint8_t value = waveTable[freq1_pos];
+
+  if (freq2_offset > 0)
+    value += waveTable[freq2_pos];
 
   write_value(value);
 
